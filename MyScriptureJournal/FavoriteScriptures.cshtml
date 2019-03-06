@@ -1,0 +1,93 @@
+﻿@{
+    Layout = "~/_Layout.cshtml";
+    Page.Title = "List Scriptures";
+
+    var db = Database.Open("MyScriptures");
+    var selectCommand = "SELECT * FROM MyScriptures";
+    var searchTerm = "";
+
+    if (!Request.QueryString["searchBook"].IsEmpty())
+    {
+        selectCommand = "SELECT * FROM MyScriptures WHERE Book = @0";
+        searchTerm = Request.QueryString["searchBook"];
+    }
+
+    if (!Request.QueryString["searchKeyWord"].IsEmpty())
+    {
+        selectCommand = "SELECT * FROM MyScriptures WHERE Text LIKE @0";
+        searchTerm = "%" + Request["searchKeyWord"] + "%";
+    }
+
+    var selectedData = db.Query(selectCommand, searchTerm);
+    var grid = new WebGrid(source: selectedData, defaultSort: "Book", rowsPerPage: 5);
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>My Scripture Notes</title>
+    <link href="https://fonts.googleapis.com/css?family=Shadows+Into+Light+Two" rel="stylesheet">
+    <style type="text/css">
+        .grid {
+            margin: 4px;
+            border-collapse: collapse;
+            width: 1200px;
+        }
+
+            .grid th, .grid td {
+                border: 1px solid #C0C0C0;
+                padding: 5px;
+            }
+
+        .head {
+            background-color: #E8E8E8;
+            font-weight: bold;
+            color: #FFF;
+        }
+
+        .alt {
+            background-color: #E8E8E8;
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+    <form method="get">
+        <div>
+            <label for="searchBook">Book to look for:</label>
+            <input type="text" name="searchBook" value="@Request.QueryString["searchBook"]" />
+            <input type="Submit" value="Search Book" /><br />
+            (Leave blank to list all scriptures.)<br />
+        </div>
+
+        <div>
+            <label for="searchKeyWord">Scriptures contains the following:</label>
+            <input type="text" name="searchKeyWord" value="@Request.QueryString["searchKeyWord"]" />
+            <input type="Submit" value="Search Scriptures" /><br />
+        </div>
+    </form>
+    <div>
+        @grid.GetHtml(
+        tableStyle: "grid",
+        headerStyle: "head",
+        alternatingRowStyle: "alt",
+        columns: grid.Columns(
+            grid.Column(format: @<a href="~/EditScripture?id=@item.ID">Edit</a>),
+                     grid.Column("Scripture"),
+                     grid.Column("Book"),
+                     grid.Column("Chapter"),
+                     grid.Column("Verse"),
+                     grid.Column("Text"),
+                     grid.Column("Notes"),
+                     grid.Column("DateAdded"),
+                     grid.Column(format: @<a href="~/DeleteScripture?id=@item.ID">Delete</a>)
+                          )
+                      )
+    </div>
+    <p>
+        <a href="~/AddScripture">Add a Scripture</a>
+    </p>
+</body>
+</html>
